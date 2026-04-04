@@ -5,28 +5,8 @@ Simple web application: Python HTTP backend behind an nginx reverse proxy, runni
 ---
 
 ## Architecture
+![docker_architecture.png](docker_architecture.png)
 
-```
-Client (browser / curl)
-        │
-        │ HTTP :80
-        ▼
-┌─────────────────────┐
-│       nginx         │  container: effective-mobile-nginx
-│   reverse proxy     │  port 80 → published to host
-└────────┬────────────┘
-         │ proxy_pass http://backend:8080
-         │ (Docker internal DNS)
-         ▼
-┌─────────────────────┐
-│      backend        │  container: effective-mobile-backend
-│  Python HTTP server │  port 8080 — internal only, not exposed to host
-└─────────────────────┘
-
-Both containers share the "effective-mobile-net" bridge network.
-```
-
----
 
 ## Tech Stack
 
