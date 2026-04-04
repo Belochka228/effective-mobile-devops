@@ -5,7 +5,7 @@ Simple web application: Python HTTP backend behind an nginx reverse proxy, runni
 ---
 
 ## Architecture
-![Architecture](docs/architecture.png)
+![Architecture](docs/docker_architecture.png)
 
 
 ## Tech Stack
