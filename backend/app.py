@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Simple HTTP server for Effective Mobile test task."""
 
 import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
