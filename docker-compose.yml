@@ -1,0 +1,60 @@
+version: "3.9"
+
+# ── Docker Compose ───────────────────────────────────────────────────────────
+# Spins up two services:
+#   • backend  – Python HTTP server (internal only, not exposed to host)
+#   • nginx    – Reverse proxy (port 80 published to host)
+#
+# Both services share the "app-network" bridge network so they can
+# communicate via service names. The backend is intentionally NOT mapped
+# to a host port.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Backend ─────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: effective-mobile-backend
+    restart: unless-stopped
+    networks:
+      - app-network
+    # No ports published: backend is reachable only from within app-network
+    environment:
+      APP_PORT: "${APP_PORT:-8080}"
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8080/')"]
+      interval: 15s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
+  # ── Nginx ────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: effective-mobile-nginx
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
+# ── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  app-network:
+    driver: bridge
+    name: effective-mobile-net
