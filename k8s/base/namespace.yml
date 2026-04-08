@@ -5,4 +5,3 @@ metadata:
   labels:
     app: effective-mobile
     env: dev
-    xyi: 8000
