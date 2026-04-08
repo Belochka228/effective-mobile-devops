@@ -1,0 +1,49 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: backend/Dockerfile
+
+  build-and-test:
+    runs-on: ubuntu-22.04
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: |
+          docker build -t effective-mobile:${{ github.sha }} ./backend
+
+      - name: Smoke test
+        run: |
+          docker run -d --name test-backend -p 8080:8080 effective-mobile:${{ github.sha }}
+          sleep 3
+          curl --fail http://localhost:8080/health
+          docker rm -f test-backend
+
+  push:
+    runs-on: ubuntu-22.04
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Push image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/effective-mobile:${{ github.sha }} ./backend
+          docker push ${{ secrets.DOCKER_USERNAME }}/effective-mobile:${{ github.sha }}
